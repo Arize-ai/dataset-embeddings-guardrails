@@ -1,15 +1,16 @@
 [project]
-name = "validator-template"
+name = "jailbreak-embeddings"
 version = "0.0.0"
-description = "Template repo for Guardrails Hub validators."
+description = "A Guardrails AI validator that stops jailbreaks based on embeddings similarity to a small dataset of known jailbreaks"
 authors = [
-    {name = "Guardrails AI", email = "contact@guardrailsai.com"}
+    {name = "Julia Gomes", email = "julia@arize.com"}
 ]
 license = {file = "LICENSE"}
 readme = "README.md"
 requires-python = ">= 3.8.1"
 dependencies = [
-    "guardrails-ai>=0.4.0"
+    "guardrails-ai>=0.4.0",
+    "llama-index>=0.10.3"
 ]
 
 [project.optional-dependencies]

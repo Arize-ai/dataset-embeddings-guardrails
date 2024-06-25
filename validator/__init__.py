@@ -1,3 +1,3 @@
-from .main import ValidatorTemplate
+from .main import JailbreakEmbeddings
 
-__all__ = ["ValidatorTemplate"]
+__all__ = ["JailbreakEmbeddings"]
