@@ -22,7 +22,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 import openai
 
 
-def embed_function(text):
+def _embed_function(text):
     if isinstance(text, str):
         text = [text]
 
@@ -54,12 +54,21 @@ class JailbreakEmbeddings(Validator):
         
         # users may send in their own source examples, but by default the module will load its own if not specified
         if kwargs.get("sources") is None:
-            with open('./jailbreak_examples.txt', 'r') as file:
+            import os
+            script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
+            file_path = os.path.join(script_dir, 'jailbreak_examples.txt')
+            with open(file_path, 'r') as file:
                 self.sources = file.read().splitlines()
+            # few shot only plz
+            self.sources = self.sources[:5]
         else:
             self.sources = kwargs.get("sources")
 
-        embed_function = kwargs.get("embed_function", None)
+
+        self.embed_function = kwargs.get("embed_function", None)
+        if self.embed_function is None:
+            self.embed_function = _embed_function
+
         # Check chunking strategy
         chunk_strategy = kwargs.get("chunk_strategy", "sentence")
         if chunk_strategy not in ["sentence", "word", "char", "token"]:
@@ -77,7 +86,7 @@ class JailbreakEmbeddings(Validator):
         self.chunks = list(itertools.chain.from_iterable(chunks))
 
         # Create embeddings
-        self.source_embeddings = np.array(embed_function(self.chunks)).squeeze()
+        self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
 
     def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         """Get the query function from metadata.
@@ -111,7 +120,7 @@ class JailbreakEmbeddings(Validator):
     ) -> ValidationResult:
         """Validate the full text in the response."""
         # Replace LLM response with user input prompt
-        value = metadata.get("user_input")
+        print("THIS IS WHAT THE VALUE IS {}".format(value))
         most_similar_chunks = query_function(text=value, k=1)
         if most_similar_chunks is None:
             metadata["highest_similarity_score"] = 0
@@ -145,7 +154,8 @@ class JailbreakEmbeddings(Validator):
     ) -> List[Tuple[str, float]]:
 
         # Create embeddings
-        query_embedding = embed_function(text).squeeze()
+        print("THIS IS MY EMBED FUNC {}".format(self.embed_function))
+        query_embedding = self.embed_function(text).squeeze()
 
         # Compute distances
         if distance_metric == "cosine":
