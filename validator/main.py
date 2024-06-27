@@ -1,6 +1,5 @@
 import itertools
 import numpy as np
-from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from enum import Enum
 
@@ -75,6 +74,16 @@ class JailbreakEmbeddings(Validator):
         
         self._threshold = float(threshold)
         self.sources = prompt_sources
+        
+        # Validate user inputs
+        if (not prompt_sources):
+            raise ValueError(f"Prompt sources: {prompt_sources} is invalid. Cannot be empty list.")
+        for prompt in prompt_sources:
+            if not prompt or not isinstance(prompt, str):
+                raise ValueError(f"Prompt example: {prompt} is invalid. Must contain valid string data.")
+            
+        if embed_function:
+            self.embed_function = embed_function
 
         chunks = [
             get_chunks_from_text(source, chunk_strategy.name.lower(), chunk_size, chunk_overlap)
@@ -84,18 +93,26 @@ class JailbreakEmbeddings(Validator):
 
         # Create embeddings
         self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
+        
+        
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validation function for the ProvenanceEmbeddings validator."""
+        """Validation function for the JailbreakEmbeddings validator. If the cosine distance
+        of the user input embeddings is below the user-specified threshold of the closest embedded chunk
+        from the jailbreak examples in prompt sources, then the Guard will return FailResult. If all chunks
+        are sufficiently distant, then the Guard will return PassResult.
+
+        :param value: This is the 'value' of user input. For the JailbreakEmbeddings Guard, we want
+            to ensure we are validating user input, rather than LLM output, so we need to call
+            the guard with Guard().use(JailbreakEmbeddings, on="prompt")
+
+        :return: PassResult or FailResult.
+        """
         # Replace LLM response with user input prompt
         print("THIS IS WHAT THE VALUE IS {}".format(value))
-        most_similar_chunks = self.query_vector_collection(text=value, k=1)
-        if most_similar_chunks is None:
-            metadata["highest_similarity_score"] = 0
-            metadata["similar_jailbreak_phrase"] = ""
-            return PassResult(metadata=metadata)
 
-        closest_chunk, lowest_distance = most_similar_chunks[0]
+        # Enforce that chunks exist
+        closest_chunk, lowest_distance = self.query_vector_collection(text=value, k=1)[0]
         metadata["highest_similarity_score"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
         if lowest_distance < self._threshold:
@@ -112,6 +129,14 @@ class JailbreakEmbeddings(Validator):
             text: str,
             k: int,
     ) -> List[Tuple[str, float]]:
+        """Embed user input text and compute cosine distances to prompt source embeddings (jailbreak examples).
+
+        :param text: Text string from user message. This will be embedded, then we will calculate the cosine distance
+            to each embedded chunk in our prompt source embeddings. 
+
+        :return: List of tuples containing the closest chunk (string text) and the float distance between that 
+            embedded chunk and the user input embedding.
+        """
 
         # Create embeddings
         query_embedding = self.embed_function(text).squeeze()
