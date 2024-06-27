@@ -108,9 +108,6 @@ class JailbreakEmbeddings(Validator):
 
         :return: PassResult or FailResult.
         """
-        # Replace LLM response with user input prompt
-        print("THIS IS WHAT THE VALUE IS {}".format(value))
-
         # Enforce that chunks exist
         closest_chunk, lowest_distance = self.query_vector_collection(text=value, k=1)[0]
         metadata["highest_similarity_score"] = lowest_distance
