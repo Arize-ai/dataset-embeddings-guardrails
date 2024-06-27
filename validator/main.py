@@ -88,9 +88,7 @@ class JailbreakEmbeddings(Validator):
             # Taken from arxiv paper TODO(Julia) Add citation properly below
             file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.txt')
             # We recommend at least 10 examples. Additional examples may adversely affect latency.
-            self.sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
-        else:
-            self.sources = prompt_sources
+            prompt_sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
         
         # Validate user inputs
         for prompt in prompt_sources:
@@ -101,14 +99,12 @@ class JailbreakEmbeddings(Validator):
 
         chunks = [
             get_chunks_from_text(source, chunk_strategy.name.lower(), chunk_size, chunk_overlap)
-            for source in self.sources
+            for source in prompt_sources
         ]
         self.chunks = list(itertools.chain.from_iterable(chunks))
 
         # Create embeddings
-        self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
-        
-        
+        self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()  
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validation function for the JailbreakEmbeddings validator. If the cosine distance
@@ -122,17 +118,18 @@ class JailbreakEmbeddings(Validator):
 
         :return: PassResult or FailResult.
         """
-        # Enforce that chunks exist
         closest_chunk, lowest_distance = self.query_vector_collection(text=value, k=1)[0]
         metadata["highest_similarity_score"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
         if lowest_distance < self._threshold:
+            # At least one jailbreak embedding chunk was within the cosine distance threshold from the user input embedding
             return FailResult(
                 metadata=metadata,
                 error_message=(
-                        "The following text in your response is similar to our dataset of jailbreaks prompts:\n" + value
+                    f"The following text in your response is similar to our dataset of jailbreaks prompts:\n{value}"
                 ),
             )
+        # All chunks exceeded the cosine distance threshold
         return PassResult(metadata=metadata)
 
     def query_vector_collection(
