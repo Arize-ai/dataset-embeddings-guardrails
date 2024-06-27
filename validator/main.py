@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from enum import Enum
+import pandas as pd
 
 import numpy as np
 
@@ -47,7 +48,7 @@ class JailbreakEmbeddings(Validator):
 
     def __init__(
             self,
-            prompt_sources: List[str],
+            prompt_sources: List[str] = None,
             threshold: float = 0.2,
             on_fail: Optional[Callable] = None,
             embed_function: Optional[Callable] = _embed_function,
@@ -61,7 +62,8 @@ class JailbreakEmbeddings(Validator):
         :param prompt_sources: Examples of jailbreak attempts that we want to Guard against. These examples will
             be embedded by our embed_function. If the Guard sees a user input message with embeddings that are close
             to any of the embedded chunks from our jailbreak examples, then the Guard will flag the jailbreak attempt.
-            We recommend adding at least 10 examples.
+            We recommend adding 10 examples. Fewer examples afffects performance, while additional examples hurts latency.
+            If user does not provide examples, we use our own dataset.
         :param threshold: Float values between 0.0 and 1.0. Defines the threshold at which a new user input is close
             enough to an embedded prompt_sources chunk that the Guard flags a jailbreak attempt. The distance is measured
             as the cosine distance between embeddings.
@@ -78,11 +80,20 @@ class JailbreakEmbeddings(Validator):
         super().__init__(on_fail, **kwargs)
         
         self._threshold = float(threshold)
-        self.sources = prompt_sources
+        
+        # Use Arize AI prompts if user does not provide their own.
+        if prompt_sources is None:
+            import os
+            script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
+            # Taken from arxiv paper TODO(Julia) Add citation properly below
+            file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.txt')
+            # We recommend at least 10 examples. Additional examples may adversely affect latency.
+            self.sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
+            # We recommend at least 10 examples. Additional examples may adversely affect latency.
+        else:
+            self.sources = prompt_sources
         
         # Validate user inputs
-        if (not prompt_sources):
-            raise ValueError(f"Prompt sources: {prompt_sources} is invalid. Cannot be empty list.")
         for prompt in prompt_sources:
             if not prompt or not isinstance(prompt, str):
                 raise ValueError(f"Prompt example: {prompt} is invalid. Must contain valid string data.")
