@@ -17,7 +17,12 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 
 
 def _embed_function(text: Union[str, List[str]]) -> np.ndarray:
-    """Function used to embed text"""
+    """Function used to embed text with OpenAIEmbedding(model="text-embedding-ada-002").
+
+    :param text: Either a string or list of strings that will be embedded.
+
+    :return: Array of embedded input string(s).
+    """
     if isinstance(text, str):
         text = [text]
 
