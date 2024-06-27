@@ -1,7 +1,7 @@
 import itertools
 import numpy as np
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from enum import Enum
 
 import numpy as np
@@ -17,7 +17,8 @@ from guardrails.validator_base import (
 from llama_index.embeddings.openai import OpenAIEmbedding
 
 
-def _embed_function(text):
+def _embed_function(text: Union[str, List[str]]) -> np.ndarray:
+    """Function used to embed text"""
     if isinstance(text, str):
         text = [text]
 
@@ -28,6 +29,7 @@ def _embed_function(text):
 
 
 class EmbeddingChunkStrategy(Enum):
+    """Chunk strategy used in get_chunks_from_text when creating embeddings."""
     SENTENCE = 0
     WORD = 1
     CHAR = 2
@@ -44,7 +46,7 @@ class JailbreakEmbeddings(Validator):
             prompt_sources: List[str],
             threshold: float = 0.2,
             on_fail: Optional[Callable] = None,
-            embed_function: Optional[Callable] = None,
+            embed_function: Optional[Callable] = _embed_function,
             chunk_strategy: EmbeddingChunkStrategy = EmbeddingChunkStrategy.SENTENCE,
             chunk_size: int = 100,
             chunk_overlap: int = 20,
@@ -61,7 +63,8 @@ class JailbreakEmbeddings(Validator):
             as the cosine distance between embeddings.
         :on_fail: Inherited from Validator.
         :embed_function: Embedding function used to embed both the prompt_sources and live user input.
-        :chunk_strategy: The strategy to use for chunking when calling Guardrails AI.
+        :chunk_strategy: The strategy to use for chunking when calling Guardrails AI. Strategies include sentence,
+            word, character or token. Details in get_chunks_from_text.
         :chunk_size: Usage defined by Guardrails AI. The size of each chunk. If the chunk_strategy is "sentences",
             this is the number of sentences per chunk. If the chunk_strategy is "characters", this is the number of 
             characters per chunk, and so on. Defaults to 100 through trial-and-error.
@@ -73,13 +76,6 @@ class JailbreakEmbeddings(Validator):
         self._threshold = float(threshold)
         self.sources = prompt_sources
 
-        self.embed_function = embed_function
-        if self.embed_function is None:
-            self.embed_function = _embed_function
-
-        chunk_size = kwargs.get("chunk_size", 100)
-        chunk_overlap = kwargs.get("chunk_overlap", 20)
-
         chunks = [
             get_chunks_from_text(source, chunk_strategy.name.lower(), chunk_size, chunk_overlap)
             for source in self.sources
@@ -89,35 +85,20 @@ class JailbreakEmbeddings(Validator):
         # Create embeddings
         self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
 
-    def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
-        """Get the query function from metadata.
-
-        If `query_function` is provided, it will be used. Otherwise, `sources` and
-        `embed_function` will be used to create a default query function.
-        """
-        embed_function = metadata.get("embed_function", None)
-        return partial(
-            self.query_vector_collection,
-            distance_metric="cosine",
-            embed_function=embed_function,
-        )
-
-    def validate_full_text(
-            self, value: Any, query_function: Callable, metadata: Dict[str, Any]
-    ) -> ValidationResult:
-        """Validate the full text in the response."""
+    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """Validation function for the ProvenanceEmbeddings validator."""
         # Replace LLM response with user input prompt
         print("THIS IS WHAT THE VALUE IS {}".format(value))
-        most_similar_chunks = query_function(text=value, k=1)
+        most_similar_chunks = self.query_vector_collection(text=value, k=1)
         if most_similar_chunks is None:
             metadata["highest_similarity_score"] = 0
             metadata["similar_jailbreak_phrase"] = ""
             return PassResult(metadata=metadata)
 
-        most_similar_chunk = most_similar_chunks[0]
-        metadata["highest_similarity_score"] = most_similar_chunk[1]
-        metadata["similar_jailbreak_phrase"] = most_similar_chunk[0]
-        if most_similar_chunk[1] < self._threshold:
+        closest_chunk, lowest_distance = most_similar_chunks[0]
+        metadata["highest_similarity_score"] = lowest_distance
+        metadata["similar_jailbreak_phrase"] = closest_chunk
+        if lowest_distance < self._threshold:
             return FailResult(
                 metadata=metadata,
                 error_message=(
@@ -126,37 +107,31 @@ class JailbreakEmbeddings(Validator):
             )
         return PassResult(metadata=metadata)
 
-    def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validation function for the ProvenanceEmbeddings validator."""
-        query_function = self.get_query_function(metadata)
-
-        return self.validate_full_text(value, query_function, metadata)
-
     def query_vector_collection(
             self,
             text: str,
             k: int,
-            embed_function: Callable,
-            distance_metric: str = "cosine",
     ) -> List[Tuple[str, float]]:
 
         # Create embeddings
-        print("THIS IS MY EMBED FUNC {}".format(self.embed_function))
         query_embedding = self.embed_function(text).squeeze()
 
         # Compute distances
-        if distance_metric == "cosine":
-            cos_sim = 1 - (
-                    np.dot(self.source_embeddings, query_embedding)
-                    / (
-                            np.linalg.norm(self.source_embeddings, axis=1)
-                            * np.linalg.norm(query_embedding)
-                    )
-            )
-            top_indices = np.argsort(cos_sim)[:k]
-            top_similarities = [cos_sim[j] for j in top_indices]
-            top_chunks = [self.chunks[j] for j in top_indices]
-        else:
-            raise ValueError("distance_metric must be 'cosine'.")
+        cos_distances = 1 - (
+                np.dot(self.source_embeddings, query_embedding)
+                / (
+                        np.linalg.norm(self.source_embeddings, axis=1)
+                        * np.linalg.norm(query_embedding)
+                )
+        )
+        
+        # Sort indices from lowest cosine distance to highest distance
+        low_to_high_ind = np.argsort(cos_distances)[:k]
+        
+        # Get top-k closest distances
+        lowest_distances = [cos_distances[j] for j in low_to_high_ind]
 
-        return list(zip(top_chunks, top_similarities))
+        # Get top-k closest chunks
+        closest_chunks = [self.chunks[j] for j in low_to_high_ind]
+
+        return list(zip(closest_chunks, lowest_distances))
