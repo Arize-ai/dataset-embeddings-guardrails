@@ -2,14 +2,10 @@ import itertools
 import numpy as np
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from collections import Counter
-import time
-import statistics
+from enum import Enum
 
 import numpy as np
 
-from guardrails import Guard
-from guardrails.llm_providers import PromptCallableException
 from guardrails.utils.docs_utils import get_chunks_from_text
 from guardrails.validator_base import (
     FailResult,
@@ -19,7 +15,6 @@ from guardrails.validator_base import (
     register_validator,
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
-import openai
 
 
 def _embed_function(text):
@@ -32,6 +27,13 @@ def _embed_function(text):
     return np.array(embeddings_out)
 
 
+class EmbeddingChunkStrategy(Enum):
+    SENTENCE = 0
+    WORD = 1
+    CHAR = 2
+    TOKEN = 3
+
+
 @register_validator(name="arize/jailbreak_embeddings", data_type="string")
 class JailbreakEmbeddings(Validator):
     """Validates that user-generated input does not match dataset of jailbreak
@@ -39,48 +41,47 @@ class JailbreakEmbeddings(Validator):
 
     def __init__(
             self,
-            threshold: float = 0.8,
-            validation_method: str = "full",
+            prompt_sources: List[str],
+            threshold: float = 0.2,
             on_fail: Optional[Callable] = None,
+            embed_function: Optional[Callable] = None,
+            chunk_strategy: EmbeddingChunkStrategy = EmbeddingChunkStrategy.SENTENCE,
+            chunk_size: int = 100,
+            chunk_overlap: int = 20,
             **kwargs,
     ):
-        super().__init__(
-            on_fail, threshold=threshold, validation_method=validation_method, **kwargs
-        )
-        self._threshold = float(threshold)
-        if validation_method not in ["full"]:
-            raise ValueError("validation_method must be 'full'.")
-        self._validation_method = "full"
+        """Initialize Arize AI Guard against jailbreak embeddings.
+
+        :param prompt_sources: Examples of jailbreak attempts that we want to Guard against. These examples will
+            be embedded by our embed_function. If the Guard sees a user input message with embeddings that are close
+            to any of the embedded chunks from our jailbreak examples, then the Guard will flag the jailbreak attempt.
+            We recommend adding at least 10 examples.
+        :param threshold: Float values between 0.0 and 1.0. Defines the threshold at which a new user input is close
+            enough to an embedded prompt_sources chunk that the Guard flags a jailbreak attempt. The distance is measured
+            as the cosine distance between embeddings.
+        :on_fail: Inherited from Validator.
+        :embed_function: Embedding function used to embed both the prompt_sources and live user input.
+        :chunk_strategy: The strategy to use for chunking when calling Guardrails AI.
+        :chunk_size: Usage defined by Guardrails AI. The size of each chunk. If the chunk_strategy is "sentences",
+            this is the number of sentences per chunk. If the chunk_strategy is "characters", this is the number of 
+            characters per chunk, and so on. Defaults to 100 through trial-and-error.
+        :chunk_overlap: The number of characters to overlap between chunks. If the chunk_strategy is "sentences", this 
+            is the number of sentences to overlap between chunks. Defaults to 20 through trial-and-error.
+        """
+        super().__init__(on_fail, **kwargs)
         
-        # users may send in their own source examples, but by default the module will load its own if not specified
-        if kwargs.get("sources") is None:
-            import os
-            script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-            file_path = os.path.join(script_dir, 'jailbreak_examples.txt')
-            with open(file_path, 'r') as file:
-                self.sources = file.read().splitlines()
-            # few shot only plz
-            self.sources = self.sources[:5]
-        else:
-            self.sources = kwargs.get("sources")
+        self._threshold = float(threshold)
+        self.sources = prompt_sources
 
-
-        self.embed_function = kwargs.get("embed_function", None)
+        self.embed_function = embed_function
         if self.embed_function is None:
             self.embed_function = _embed_function
 
-        # Check chunking strategy
-        chunk_strategy = kwargs.get("chunk_strategy", "sentence")
-        if chunk_strategy not in ["sentence", "word", "char", "token"]:
-            raise ValueError(
-                "`chunk_strategy` must be one of 'sentence', 'word', 'char', "
-                "or 'token'."
-            )
         chunk_size = kwargs.get("chunk_size", 100)
         chunk_overlap = kwargs.get("chunk_overlap", 20)
 
         chunks = [
-            get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)
+            get_chunks_from_text(source, chunk_strategy.name.lower(), chunk_size, chunk_overlap)
             for source in self.sources
         ]
         self.chunks = list(itertools.chain.from_iterable(chunks))
