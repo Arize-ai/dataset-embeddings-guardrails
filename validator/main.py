@@ -95,24 +95,10 @@ class JailbreakEmbeddings(Validator):
         If `query_function` is provided, it will be used. Otherwise, `sources` and
         `embed_function` will be used to create a default query function.
         """
-        query_fn = metadata.get("query_function", None)
-
-        # Check that query_fn or sources are provided
-        if query_fn is not None:
-            return query_fn
-
-        # Check distance metric
-        distance_metric = metadata.get("distance_metric", "cosine")
-        if distance_metric not in ["cosine", "euclidean"]:
-            raise ValueError(
-                "`distance_metric` must be one of 'cosine' or 'euclidean'."
-            )
-
-        # Check embed model
         embed_function = metadata.get("embed_function", None)
         return partial(
             self.query_vector_collection,
-            distance_metric=distance_metric,
+            distance_metric="cosine",
             embed_function=embed_function,
         )
 
