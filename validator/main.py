@@ -85,7 +85,7 @@ class JailbreakEmbeddings(Validator):
         if prompt_sources is None:
             import os
             script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
-            # Taken from arxiv paper TODO(Julia) Add citation properly below
+            # Dataset from public repo associated with arxiv paper https://github.com/verazuo/jailbreak_llms
             file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.txt')
             # We recommend at least 10 examples. Additional examples may adversely affect latency.
             prompt_sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
