@@ -89,7 +89,6 @@ class JailbreakEmbeddings(Validator):
             file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.txt')
             # We recommend at least 10 examples. Additional examples may adversely affect latency.
             self.sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
-            # We recommend at least 10 examples. Additional examples may adversely affect latency.
         else:
             self.sources = prompt_sources
         
@@ -98,8 +97,7 @@ class JailbreakEmbeddings(Validator):
             if not prompt or not isinstance(prompt, str):
                 raise ValueError(f"Prompt example: {prompt} is invalid. Must contain valid string data.")
             
-        if embed_function:
-            self.embed_function = embed_function
+        self.embed_function = embed_function
 
         chunks = [
             get_chunks_from_text(source, chunk_strategy.name.lower(), chunk_size, chunk_overlap)
