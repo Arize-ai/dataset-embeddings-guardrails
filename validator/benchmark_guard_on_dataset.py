@@ -1,6 +1,6 @@
+"""Benchmark Arize JailbreakEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts."""
 import os
 from getpass import getpass
-import numpy as np
 from typing import List
 import time
 import statistics
@@ -11,34 +11,46 @@ import openai
 from sklearn.utils import shuffle
 
 import numpy as np
-from typing import List
+from typing import List, Optional
 import time
 import statistics
-
-import numpy as np
 
 from guardrails import Guard
 from guardrails.llm_providers import PromptCallableException
 import openai
 
-from main import JailbreakEmbeddings
+from main import JailbreakEmbeddings, get_prompts
 
 
-JAILBREAK_DATASET_FILEPATH = "/Users/juliagomes/validator-template/validator/jailbreak_prompts_2023_05_07.csv"
-VANILLA_PROMPTS_DATASET_FILEPATH = "/Users/juliagomes/validator-template/validator/regular_prompts_2023_05_07.csv"
+JAILBREAK_PROMPTS_FP = "jailbreak_prompts_2023_05_07.csv"
+VANILLA_PROMPTS_FP = "regular_prompts_2023_05_07.csv"
+# Number of few-shot examples to show Guard what a jailbreak prompts looks like.
+# Too few examples will result in False Negatives, while too many examples will result in worse latency.
 NUM_FEW_SHOT_EXAMPLES = 10
 MODEL = "gpt-3.5-turbo"
 # Output file to log debugging info. Set to None if you do not wish to add logging.
 OUTFILE = f"/tmp/arize_{JailbreakEmbeddings.__name__}_guard_{MODEL}_output.txt"
-np.random.seed(838)
 
 
 def append_to_file(filepath: str, text: str) -> None:
+    """Append debugging text to output filepath.
+
+    :param filepath: String defining the filepath of output text.
+    :param text: String message to append to the filepath.
+    """
     with open(filepath, "a") as f:
         f.write(f"\nprompt:\n{text}")
 
 
-def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, train_prompts: List[str], outfile: str):
+def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, train_prompts: List[str], outfile: Optional[str]):
+    """Evaluate Embeddings guard on benchmark dataset. Refer to README for details and links to arxiv paper. This
+    will calculate the number of True Positives, False Positives, True Negatives and False Negatives.
+
+    :param test_prompts: List of string prompts where we want to evaluate the Guard's response.
+    :param guard: Guard we want to evaluate.
+    :param train_prompts: List of source prompts that serve as a few-shot guide to prompts we want to guard against.
+    :param outfile: Output file for debugging information. If None, then we do not write logging information to a file.
+    """
     latency_measurements = []
     num_passed_guard = 0
     num_failed_guard = 0
@@ -74,7 +86,15 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
     return num_passed_guard, num_failed_guard, latency_measurements
 
 
-def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jailbreak_test_prompts: List[str], vanilla_prompts: List[str], outfile: str):
+def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jailbreak_test_prompts: List[str], vanilla_prompts: List[str], outfile: Optional[str]):
+    """Benchmark Arize JailbreakEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts.
+
+    :param train_prompts: Few-shot examples of jailbreak prompts.
+    :param jailbreak_test_prompts: Test prompts used to evaluate the Guard. We expect the Guard to block these examples.
+    :param vanilla_prompts: Regular prompts used to evaluate the Guard. We expect the Guard to pass these examples.
+    :param outfile: Filepath where we output debugging information, including TP, FP, TN, FN, latency per call, aggregate latency statistics,
+        original prompt and validator response.
+    """
     # Set up Guard
     guard = Guard.from_string(
         validators=[
@@ -111,12 +131,12 @@ def get_prompts(filename: str) -> List[str]:
 
 def main():
     # Jailbreak prompts that we expect to Fail the Guard (656 examples)
-    jailbreak_prompts = get_prompts("jailbreak_prompts_2023_05_07.csv")
+    jailbreak_prompts = get_prompts(JAILBREAK_PROMPTS_FP)
     train_prompts = jailbreak_prompts[-NUM_FEW_SHOT_EXAMPLES:]
     test_prompts = jailbreak_prompts[:-NUM_FEW_SHOT_EXAMPLES]
 
     # Vanilla prompts that we expect to Pass the Guard
-    vanilla_prompts = get_prompts("regular_prompts_2023_05_07.csv")
+    vanilla_prompts = get_prompts(VANILLA_PROMPTS_FP)
 
     benchmark_arize_jailbreak_embeddings_validator(
         jailbreak_test_prompts=test_prompts,
