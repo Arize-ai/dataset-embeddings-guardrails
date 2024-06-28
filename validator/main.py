@@ -56,7 +56,6 @@ class JailbreakEmbeddings(Validator):
             chunk_strategy: EmbeddingChunkStrategy = EmbeddingChunkStrategy.SENTENCE,
             chunk_size: int = 100,
             chunk_overlap: int = 20,
-            **kwargs,
     ):
         """Initialize Arize AI Guard against jailbreak embeddings.
 
@@ -78,10 +77,10 @@ class JailbreakEmbeddings(Validator):
         :chunk_overlap: The number of characters to overlap between chunks. If the chunk_strategy is "sentences", this 
             is the number of sentences to overlap between chunks. Defaults to 20 through trial-and-error.
         """
-        super().__init__(on_fail, **kwargs)
-        
+        super().__init__(on_fail, prompt_sources=prompt_sources, threshold=threshold, embed_function=embed_function, chunk_strategy=chunk_strategy, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self._threshold = float(threshold)
         
+        print("Jailbreak Embeddings initialized with prompt_sources={}".format(prompt_sources))
         # Use Arize AI prompts if user does not provide their own.
         if prompt_sources is None:
             import os
