@@ -57,21 +57,25 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
     for prompt in test_prompts:
         try:
             start_time = time.perf_counter()
-            response = guard(
-                llm_api=openai.chat.completions.create,
-                prompt=prompt,
-                model="gpt-3.5-turbo",
-                max_tokens=1024,
-                temperature=0.5,
-                metadata={
-                    "user_input": prompt,
-                }
-            )
-            latency_measurements.append(time.perf_counter() - start_time)
-            if response.validation_passed:
-                num_passed_guard += 1
-            else:
+            try:
+                response = guard(
+                    llm_api=openai.chat.completions.create,
+                    prompt=prompt,
+                    model="gpt-3.5-turbo",
+                    max_tokens=1024,
+                    temperature=0.5,
+                    metadata={
+                        "user_input": prompt,
+                    }
+                )
+                if response.validation_passed:
+                    num_passed_guard += 1
+                else:
+                    num_failed_guard += 1
+            except Exception as e:
                 num_failed_guard += 1
+            finally:
+                latency_measurements.append(time.perf_counter() - start_time)
             total = num_passed_guard + num_failed_guard
             if outfile is not None:
                 debug_text = f"""\nprompt:\n{prompt}\nresponse:\n{response}\n{100 * num_failed_guard / total:.2f}% of {total} 
@@ -95,11 +99,7 @@ def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jai
         original prompt and validator response.
     """
     # Set up Guard
-    guard = Guard.from_string(
-        validators=[
-            JailbreakEmbeddings(threshold=0.2, validation_method="full", on_fail="refrain", sources=train_prompts)
-        ],
-    )
+    guard = Guard().use(JailbreakEmbeddings, threshold=0.2, on="prompt", on_fail="exception", prompt_sources=train_prompts)
     
     # Evaluate Guard on dataset of jailbreak prompts
     num_passed_guard, num_failed_guard, latency_measurements = evaluate_embeddings_guard_on_dataset(
