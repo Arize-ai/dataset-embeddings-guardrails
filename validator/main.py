@@ -119,6 +119,7 @@ class JailbreakEmbeddings(Validator):
         closest_chunk, lowest_distance = self.query_vector_collection(text=value, k=1)[0]
         metadata["highest_similarity_score"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
+        metadata["user prompt"] = value
         if lowest_distance < self._threshold:
             # At least one jailbreak embedding chunk was within the cosine distance threshold from the user input embedding
             return FailResult(
