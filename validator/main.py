@@ -48,47 +48,64 @@ class JailbreakEmbeddings(Validator):
     embeddings from Arize AI."""
 
     def __init__(
-        self,
-        threshold: float = 0.2,
-        validation_method: str = "full",
-        on_fail: Optional[Callable] = None,
-        **kwargs,
+            self,
+            prompt_sources: List[str] = None,
+            threshold: float = 0.2,
+            on_fail: Optional[Callable] = None,
+            embed_function: Optional[Callable] = _embed_function,
+            chunk_strategy: EmbeddingChunkStrategy = EmbeddingChunkStrategy.SENTENCE,
+            chunk_size: int = 100,
+            chunk_overlap: int = 20,
+            **kwargs,
     ):
-        super().__init__(
-            on_fail, threshold=threshold, validation_method=validation_method, **kwargs
-        )
+        """Initialize Arize AI Guard against jailbreak embeddings.
+
+        :param prompt_sources: Examples of jailbreak attempts that we want to Guard against. These examples will
+            be embedded by our embed_function. If the Guard sees a user input message with embeddings that are close
+            to any of the embedded chunks from our jailbreak examples, then the Guard will flag the jailbreak attempt.
+            We recommend adding 10 examples. Fewer examples afffects performance, while additional examples hurts latency.
+            If user does not provide examples, we use our own dataset.
+        :param threshold: Float values between 0.0 and 1.0. Defines the threshold at which a new user input is close
+            enough to an embedded prompt_sources chunk that the Guard flags a jailbreak attempt. The distance is measured
+            as the cosine distance between embeddings.
+        :on_fail: Inherited from Validator.
+        :embed_function: Embedding function used to embed both the prompt_sources and live user input.
+        :chunk_strategy: The strategy to use for chunking when calling Guardrails AI. Strategies include sentence,
+            word, character or token. Details in get_chunks_from_text.
+        :chunk_size: Usage defined by Guardrails AI. The size of each chunk. If the chunk_strategy is "sentences",
+            this is the number of sentences per chunk. If the chunk_strategy is "characters", this is the number of 
+            characters per chunk, and so on. Defaults to 100 through trial-and-error.
+        :chunk_overlap: The number of characters to overlap between chunks. If the chunk_strategy is "sentences", this 
+            is the number of sentences to overlap between chunks. Defaults to 20 through trial-and-error.
+        """
+        super().__init__(on_fail, **kwargs)
+        
         self._threshold = float(threshold)
-        self._validation_method = "full"
-        self.sources = kwargs.get("sources", None)
         
         # Use Arize AI prompts if user does not provide their own.
-        if self.sources is None:
+        if prompt_sources is None:
+            import os
             script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
             # Dataset from public repo associated with arxiv paper https://github.com/verazuo/jailbreak_llms
-            file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.csv')
+            file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.txt')
             # We recommend at least 10 examples. Additional examples may adversely affect latency.
-            self.sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
-
+            prompt_sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
+        
         # Validate user inputs
-        for prompt in self.sources:
+        for prompt in prompt_sources:
             if not prompt or not isinstance(prompt, str):
                 raise ValueError(f"Prompt example: {prompt} is invalid. Must contain valid string data.")
-
-        self.embed_function = kwargs.get("embed_function", _embed_function)
-
-        # Check chunking strategy
-        chunk_strategy = kwargs.get("chunk_strategy",EmbeddingChunkStrategy.SENTENCE.name.lower())
-        chunk_size = kwargs.get("chunk_size", 100)
-        chunk_overlap = kwargs.get("chunk_overlap", 20)
+            
+        self.embed_function = embed_function
 
         chunks = [
-            get_chunks_from_text(source, chunk_strategy, chunk_size, chunk_overlap)
-            for source in self.sources
+            get_chunks_from_text(source, chunk_strategy.name.lower(), chunk_size, chunk_overlap)
+            for source in prompt_sources
         ]
         self.chunks = list(itertools.chain.from_iterable(chunks))
 
         # Create embeddings
-        self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
+        self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()  
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validation function for the JailbreakEmbeddings validator. If the cosine distance
@@ -102,7 +119,7 @@ class JailbreakEmbeddings(Validator):
 
         :return: PassResult or FailResult.
         """
-        closest_chunk, lowest_distance = self.query_vector_collection(text=metadata.get("user_input"), k=1)[0]
+        closest_chunk, lowest_distance = self.query_vector_collection(text=value, k=1)[0]
         metadata["highest_similarity_score"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
         if lowest_distance < self._threshold:
