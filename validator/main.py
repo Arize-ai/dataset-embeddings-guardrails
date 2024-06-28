@@ -126,6 +126,7 @@ class JailbreakEmbeddings(Validator):
                 error_message=(
                     f"The following text in your response is similar to our dataset of jailbreaks prompts:\n{value}"
                 ),
+                fix_value="I'm sorry, I cannot respond. The Arize Guard flagged this message as a Jailbreak attempt."
             )
         # All chunks exceeded the cosine distance threshold
         return PassResult(metadata=metadata)
