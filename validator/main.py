@@ -34,6 +34,20 @@ def _embed_function(text: Union[str, List[str]]) -> np.ndarray:
     return np.array(embeddings_out)
 
 
+def get_prompts(filename: str) -> List[str]:
+    """Get prompts from local file.
+    
+    :param filename: Name of CSV file (excluding directory), e.g. my_file.csv.
+
+    :return: List of prompt strings, e.g. ["my prompt 1", "my prompt 2", ..., "my prompt 500"]
+    """
+    script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
+    # Dataset from public repo associated with arxiv paper https://github.com/verazuo/jailbreak_llms
+    file_path = os.path.join(script_dir, filename)
+    prompts = pd.read_csv(file_path)["prompt"].tolist()
+    return prompts
+
+
 class EmbeddingChunkStrategy(Enum):
     """Chunk strategy used in get_chunks_from_text when creating embeddings."""
     SENTENCE = 0
