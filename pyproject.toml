@@ -20,6 +20,12 @@ dev = [
     "ruff"
 ] 
 
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"jailbreak_embeddings" = ["validator/*.csv"]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-rP"
