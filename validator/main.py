@@ -80,7 +80,6 @@ class JailbreakEmbeddings(Validator):
         super().__init__(on_fail, prompt_sources=prompt_sources, threshold=threshold, embed_function=embed_function, chunk_strategy=chunk_strategy, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self._threshold = float(threshold)
         
-        print("Jailbreak Embeddings initialized with prompt_sources={}".format(prompt_sources))
         # Use Arize AI prompts if user does not provide their own.
         if prompt_sources is None:
             import os
