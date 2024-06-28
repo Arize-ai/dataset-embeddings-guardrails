@@ -86,8 +86,7 @@ class JailbreakEmbeddings(Validator):
             # Dataset from public repo associated with arxiv paper https://github.com/verazuo/jailbreak_llms
             file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.csv')
             # We recommend at least 10 examples. Additional examples may adversely affect latency.
-            prompt_sources = pd.read_csv(file_path)["prompt"].tolist()[:10]
-        
+            self.sources = pd.read_csv(file_path)["prompt"].tolist()[-10:]
         # Validate user inputs
         for prompt in prompt_sources:
             if not prompt or not isinstance(prompt, str):

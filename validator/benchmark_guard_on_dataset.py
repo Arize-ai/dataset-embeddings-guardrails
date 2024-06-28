@@ -42,7 +42,7 @@ def append_to_file(filepath: str, text: str) -> None:
         f.write(f"\nprompt:\n{text}")
 
 
-def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, train_prompts: List[str], outfile: Optional[str]):
+def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, outfile: Optional[str]):
     """Evaluate Embeddings guard on benchmark dataset. Refer to README for details and links to arxiv paper. This
     will calculate the number of True Positives, False Positives, True Negatives and False Negatives.
 
@@ -65,7 +65,6 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
                 temperature=0.5,
                 metadata={
                     "user_input": prompt,
-                    "sources": train_prompts,
                 }
             )
             latency_measurements.append(time.perf_counter() - start_time)
@@ -105,7 +104,7 @@ def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jai
     # Evaluate Guard on dataset of jailbreak prompts
     num_passed_guard, num_failed_guard, latency_measurements = evaluate_embeddings_guard_on_dataset(
         test_prompts=jailbreak_test_prompts,
-        guard=guard, train_prompts=train_prompts, outfile=outfile)
+        guard=guard, outfile=outfile)
     if outfile is not None:
         debug_text = f"""\n{num_failed_guard} True Positives.\n{num_passed_guard} False Negatives. \n{statistics.median(latency_measurements)}
             median latency\n{statistics.mean(latency_measurements)} mean latency\n{max(latency_measurements)} max latency"""
@@ -114,7 +113,7 @@ def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jai
     # Evaluate Guard on dataset of regular prompts
     num_passed_guard, num_failed_guard, latency_measurements = evaluate_embeddings_guard_on_dataset(
         test_prompts=vanilla_prompts,
-        guard=guard, train_prompts=train_prompts, outfile=outfile)
+        guard=guard, outfile=outfile)
     if outfile is not None:
         debug_text = f"""\n{num_failed_guard} True Negatives\n{num_passed_guard} False Positives \n{statistics.median(latency_measurements)}
             median latency\n{statistics.mean(latency_measurements)} mean latency\n{max(latency_measurements)} max latency"""
