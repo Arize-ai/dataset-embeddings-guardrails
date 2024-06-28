@@ -29,7 +29,7 @@ VANILLA_PROMPTS_FP = "regular_prompts_2023_05_07.csv"
 NUM_FEW_SHOT_EXAMPLES = 10
 MODEL = "gpt-3.5-turbo"
 # Output file to log debugging info. Set to None if you do not wish to add logging.
-OUTFILE = f"/tmp/arize_{JailbreakEmbeddings.__name__}_guard_{MODEL}_output.txt"
+OUTFILE = f"arize_{JailbreakEmbeddings.__name__}_guard_{MODEL}_output.txt"
 
 
 def append_to_file(filepath: str, text: str) -> None:
