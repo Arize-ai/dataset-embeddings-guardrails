@@ -12,6 +12,24 @@
 ### Intended Use
 This validator is a template for creating other validators, but for demonstrative purposes it ensures that a generated output is the literal `pass`.
 
+### Benchmark results
+We benchmarked the Arize JailbreakEmbeddings Guard on 656 prompts contained in the dataset validator/jailbreak_prompts_2023_05_07.csv.
+The benchmarking code is provided in validator/benchmark_guard_on_dataset.py.
+For details on the dataset, please refer to the following resources:
+* Research Paper on Arxiv: https://arxiv.org/pdf/2308.03825
+* Repository containing the dataset and other benchmarks: https://github.com/verazuo/jailbreak_llms
+* Website associated with original research paper: https://jailbreak-llms.xinyueshen.me/
+* URL link to original dataset: https://github.com/verazuo/jailbreak_llms/tree/main/data
+
+The Arize JailbreakEmbeddings Guard has the following results
+86.43% of 656 jailbreak prompts failed the JailbreakEmbeddings guard.
+13.57% of 656 jailbreak prompts passed the JailbreakEmbeddings guard.
+567 True Positives
+89 False Negatives
+1.41 median latency
+2.91 mean latency
+618.54 max latency
+
 ### Requirements
 
 * Dependencies:
