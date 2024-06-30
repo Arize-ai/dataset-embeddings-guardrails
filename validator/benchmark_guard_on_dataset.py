@@ -65,7 +65,7 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
                     max_tokens=1024,
                     temperature=0.5,
                     metadata={
-                        "user_input": prompt,
+                        "user_message": prompt,
                     }
                 )
                 if response.validation_passed:
