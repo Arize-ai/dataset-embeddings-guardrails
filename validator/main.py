@@ -116,7 +116,7 @@ class JailbreakEmbeddings(Validator):
         :return: PassResult or FailResult.
         """
         closest_chunk, lowest_distance = self.query_vector_collection(text=value, k=1)[0]
-        metadata["highest_similarity_score"] = lowest_distance
+        metadata["lowest_cosine_distance"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
         metadata["user prompt"] = value
         if lowest_distance < self._threshold:
