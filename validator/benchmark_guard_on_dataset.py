@@ -6,11 +6,9 @@ import time
 import statistics
 
 import pandas as pd
-import numpy as np
 import openai
 from sklearn.utils import shuffle
 
-import numpy as np
 from typing import List, Optional
 import time
 import statistics
@@ -64,7 +62,7 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
                 max_tokens=1024,
                 temperature=0.5,
                 metadata={
-                    "user_input": prompt,
+                    "user_message": prompt,
                 }
             )
             latency_measurements.append(time.perf_counter() - start_time)

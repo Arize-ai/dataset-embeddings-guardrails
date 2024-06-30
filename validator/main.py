@@ -30,7 +30,8 @@ def _embed_function(text: Union[str, List[str]]) -> np.ndarray:
 
     embeddings_out = []
     for current_example in text:
-        embeddings_out.append(OpenAIEmbedding(model="text-embedding-ada-002").get_text_embedding(current_example))
+        embedding = OpenAIEmbedding(model="text-embedding-ada-002").get_text_embedding(current_example)
+        embeddings_out.append(embedding)
     return np.array(embeddings_out)
 
 
@@ -82,7 +83,7 @@ class JailbreakEmbeddings(Validator):
             file_path = os.path.join(script_dir, 'jailbreak_prompts_2023_05_07.csv')
             # We recommend at least 10 examples. Additional examples may adversely affect latency.
             self.sources = pd.read_csv(file_path)["prompt"].tolist()[-10:]
-
+        
         # Validate user inputs
         for prompt in self.sources:
             if not prompt or not isinstance(prompt, str):
@@ -116,16 +117,28 @@ class JailbreakEmbeddings(Validator):
 
         :return: PassResult or FailResult.
         """
-        closest_chunk, lowest_distance = self.query_vector_collection(text=metadata.get("user_input"), k=1)[0]
-        metadata["highest_similarity_score"] = lowest_distance
+        # Get user message if available explicitly as metadata. If unavailable, use value. This could be
+        # the context, prompt or LLM output, depending on how the Guard is set up and called.
+        user_message = metadata.get("user_message", value)
+        
+        # Get closest chunk in the embedded few shot examples of jailbreak prompts.
+        # Get cosine distance between the embedding of the user message and the closest embedded jailbreak prompts chunk.
+        closest_chunk, lowest_distance = self.query_vector_collection(text=user_message, k=1)[0]
+        metadata["lowest_cosine_distance"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
-        metadata["user prompt"] = value
+        metadata["user prompt"] = user_message
+        
+        # Pass or fail Guard based on minimum cosine distance between user message and embedded jailbreak prompts.
         if lowest_distance < self._threshold:
             # At least one jailbreak embedding chunk was within the cosine distance threshold from the user input embedding
             return FailResult(
                 metadata=metadata,
                 error_message=(
-                    f"The following text in your response is similar to our dataset of jailbreaks prompts:\n{value}"
+                    f"""The following message triggered the Arize JailbreakEmbeddings Guard:
+                        {user_message}.
+                    
+                    The message is similar to the following text chunk in our few shot dataset of jailbreaks prompts:
+                        {closest_chunk}"""
                 ),
             )
         # All chunks exceeded the cosine distance threshold
@@ -145,16 +158,16 @@ class JailbreakEmbeddings(Validator):
             embedded chunk and the user input embedding.
         """
 
-        # Create embeddings
+        # Create embeddings on user message
         query_embedding = self.embed_function(text).squeeze()
 
         # Compute distances
         cos_distances = 1 - (
-                np.dot(self.source_embeddings, query_embedding)
-                / (
-                        np.linalg.norm(self.source_embeddings, axis=1)
-                        * np.linalg.norm(query_embedding)
-                )
+            np.dot(self.source_embeddings, query_embedding)
+            / (
+                np.linalg.norm(self.source_embeddings, axis=1)
+                * np.linalg.norm(query_embedding)
+            )
         )
         
         # Sort indices from lowest cosine distance to highest distance
