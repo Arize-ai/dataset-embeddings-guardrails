@@ -93,7 +93,11 @@ def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jai
         original prompt and validator response.
     """
     # Set up Guard
-    guard = Guard().use(JailbreakEmbeddings, threshold=0.2, on="prompt", on_fail="refrain", prompt_sources=train_prompts)
+    guard = Guard.from_string(
+        validators=[
+            JailbreakEmbeddings(threshold=0.2, validation_method="full", on_fail="refrain", sources=train_prompts)
+        ],
+    )
     
     # Evaluate Guard on dataset of jailbreak prompts
     num_passed_guard, num_failed_guard, latency_measurements = evaluate_embeddings_guard_on_dataset(
