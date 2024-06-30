@@ -65,11 +65,11 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
                     "user_message": prompt,
                 }
             )
+            latency_measurements.append(time.perf_counter() - start_time)
             if response.validation_passed:
                 num_passed_guard += 1
             else:
                 num_failed_guard += 1
-            latency_measurements.append(time.perf_counter() - start_time)
             total = num_passed_guard + num_failed_guard
             if outfile is not None:
                 debug_text = f"""\nprompt:\n{prompt}\nresponse:\n{response}\n{100 * num_failed_guard / total:.2f}% of {total} 
