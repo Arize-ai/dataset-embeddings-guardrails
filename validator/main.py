@@ -76,7 +76,7 @@ class DatasetEmbeddings(Validator):
         self._threshold = float(threshold)
         self._validation_method = "full"
         if kwargs.get("sources") is None:
-            logging.warn("A source dataset was not provided, so using default sources of Jailbreak prompts from Arize.")
+            logging.warning("A source dataset was not provided, so using default sources of Jailbreak prompts from Arize.")
         self.sources = kwargs.get("sources", FEW_SHOT_TRAIN_PROMPTS)
         
         # Validate user inputs
