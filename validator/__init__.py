@@ -1,3 +1,3 @@
-from .main import JailbreakEmbeddings
+from .main import DatasetEmbeddings
 
-__all__ = ["JailbreakEmbeddings"]
+__all__ = ["DatasetEmbeddings"]
