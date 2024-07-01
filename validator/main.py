@@ -121,7 +121,6 @@ class DatasetEmbeddings(Validator):
         closest_chunk, lowest_distance = self.query_vector_collection(text=user_message, k=1)[0]
         metadata["lowest_cosine_distance"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
-        metadata["user prompt"] = user_message
         
         # Pass or fail Guard based on minimum cosine distance between user message and embedded jailbreak prompts.
         if lowest_distance < self._threshold:
