@@ -3,13 +3,13 @@
 from typing import List
 from guardrails import Guard
 import pytest
-from validator.main import JailbreakEmbeddings, get_prompts
+from validator.main import DatasetEmbeddings, get_prompts
 
 # We use 'exception' as the validator's fail action,
 #  so we expect failures to always raise an Exception
 # Learn more about corrective actions here:
 #  https://www.guardrailsai.com/docs/concepts/output/#%EF%B8%8F-specifying-corrective-actions
-guard = Guard().use(validator=JailbreakEmbeddings, on="prompt", on_fail="exception")
+guard = Guard().use(validator=DatasetEmbeddings, on="prompt", on_fail="exception")
    
 
 def test_pass():

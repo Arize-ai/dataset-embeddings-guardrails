@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from enum import Enum
 import pandas as pd
 import os
+import logging
 
 import numpy as np
 
@@ -57,8 +58,8 @@ class EmbeddingChunkStrategy(Enum):
     TOKEN = 3
 
 
-@register_validator(name="arize/jailbreak_embeddings", data_type="string")
-class JailbreakEmbeddings(Validator):
+@register_validator(name="arize/dataset_embeddings", data_type="string")
+class DatasetEmbeddings(Validator):
     """Validates that user-generated input does not match dataset of jailbreak
     embeddings from Arize AI."""
 
@@ -74,6 +75,8 @@ class JailbreakEmbeddings(Validator):
         )
         self._threshold = float(threshold)
         self._validation_method = "full"
+        if kwargs.get("sources") is None:
+            logging.warning("A source dataset was not provided, so using default sources of Jailbreak prompts from Arize.")
         self.sources = kwargs.get("sources", FEW_SHOT_TRAIN_PROMPTS)
         
         # Validate user inputs
@@ -98,14 +101,14 @@ class JailbreakEmbeddings(Validator):
         self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validation function for the JailbreakEmbeddings validator. If the cosine distance
+        """Validation function for the DatasetEmbeddings validator. If the cosine distance
         of the user input embeddings is below the user-specified threshold of the closest embedded chunk
         from the jailbreak examples in prompt sources, then the Guard will return FailResult. If all chunks
         are sufficiently distant, then the Guard will return PassResult.
 
-        :param value: This is the 'value' of user input. For the JailbreakEmbeddings Guard, we want
+        :param value: This is the 'value' of user input. For the DatasetEmbeddings Guard, we want
             to ensure we are validating user input, rather than LLM output, so we need to call
-            the guard with Guard().use(JailbreakEmbeddings, on="prompt")
+            the guard with Guard().use(DatasetEmbeddings, on="prompt")
 
         :return: PassResult or FailResult.
         """
@@ -118,7 +121,6 @@ class JailbreakEmbeddings(Validator):
         closest_chunk, lowest_distance = self.query_vector_collection(text=user_message, k=1)[0]
         metadata["lowest_cosine_distance"] = lowest_distance
         metadata["similar_jailbreak_phrase"] = closest_chunk
-        metadata["user prompt"] = user_message
         
         # Pass or fail Guard based on minimum cosine distance between user message and embedded jailbreak prompts.
         if lowest_distance < self._threshold:
@@ -126,10 +128,10 @@ class JailbreakEmbeddings(Validator):
             return FailResult(
                 metadata=metadata,
                 error_message=(
-                    f"""The following message triggered the Arize JailbreakEmbeddings Guard:
-                        {user_message}.
+                    f"""The following message triggered the Arize DatasetEmbeddings Guard:\n
+                        {user_message}.\n
                     
-                    The message is similar to the following text chunk in our few shot dataset of jailbreaks prompts:
+                    The message is similar to the following text chunk in our few shot dataset of jailbreaks prompts:\n
                         {closest_chunk}"""
                 ),
             )
