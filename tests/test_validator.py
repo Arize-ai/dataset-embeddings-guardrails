@@ -1,5 +1,6 @@
 # to run these, run 
 # pytest tests/test_validator.py
+# this requires setting API key with export OPENAI_API_KEY = "my_key_from_open_ai"
 from guardrails import Guard
 from validator.main import DatasetEmbeddings
 
