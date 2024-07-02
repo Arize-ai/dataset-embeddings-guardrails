@@ -23,16 +23,16 @@ For details on the dataset, please refer to the following resources:
 * URL link to original dataset: https://github.com/verazuo/jailbreak_llms/tree/main/data
 
 The Arize `ArizeDatasetEmbeddings` Guard has the following results:
-* 86.43% of 656 jailbreak prompts failed the JailbreakEmbeddings guard.
-* 13.57% of 656 jailbreak prompts passed the JailbreakEmbeddings guard.
+* 86.43% of 656 jailbreak prompts failed the `ArizeDatasetEmbeddings` guard with the jailbreak dataset.
+* 13.57% of 656 jailbreak prompts passed the `ArizeDatasetEmbeddings` guard with the jailbreak dataset.
 * 567 True Positives
 * 89 False Negatives
 * 1.41 median latency for the end-to-end call with guard
 * 2.91 mean latency for the end-to-end call with guard
 
 On the dataset of regular prompts in `validator/regular_prompts_2023_05_07.csv`, which are role play prompts that are designed to look like jailbreak attempts, we get the following results:
-* 13.95% of 2000 prompts failed the JailbreakEmbeddings guard.
-* 86.05% of 2000 prompts passed the JailbreakEmbeddings guard.
+* 13.95% of 2000 prompts failed the `ArizeDatasetEmbeddings` guard with the jailbreak dataset.
+* 86.05% of 2000 prompts passed the `ArizeDatasetEmbeddings` guard with the jailbreak dataset.
 
 We defer readers to the arxiv paper to see the effectiveness of these prompts against other guards: https://arxiv.org/pdf/2308.03825.
 
