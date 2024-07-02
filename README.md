@@ -1,13 +1,17 @@
 # Overview
 
-| Developed by | Guardrails AI |
-| Date of development | Feb 15, 2024 |
-| Validator type | Format |
-| Blog |  |
+| Developed by | Arize AI |
+| Date of development | July 2, 2024 |
+| Validator type | Dataset, Embeddings |
+| Blog | TODO(Julia) Add link to docs |
 | License | Apache 2 |
-| Input/Output | Output |
+| Input/Output | Input or Output |
 
 ## Description
+
+Provided an input dataset of "bad" prompts or LLM messages, this Guard will block the LLM from responding to similar prompts or producing similar LLM messages. First, the Guard computes embeddings over split chunks of the few shot examples in a source dataset (we recommend 10 examples) and stores them upon construction. When the Guard is later called on an input message, the Guard checks the cosine distance between the embedded incoming message and the embedded chunks from the source dataset. If any of the chunks are within a user-specified threshold (defaults to 0.2), then the Guard will take the user-specified action to block the LLM call.
+
+This is a very flexible Guard. In our demo notebook, the Guard is separately applied to a public dataset of Jailbreak prompts and a public dataset of PII inputs. This Guard can be updated easily by changing the dataset to accommodate specialized use cases or evolving prompt injection techniques.
 
 ### Intended Use
 This validator is a template for creating other validators, but for demonstrative purposes it ensures that a generated output is the literal `pass`.
