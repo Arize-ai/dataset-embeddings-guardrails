@@ -3,7 +3,7 @@
 | Developed by | Arize AI |
 | Date of development | July 2, 2024 |
 | Validator type | Dataset, Embeddings |
-| Blog | TODO(Julia) Add link to docs |
+| Blog | [Arize Docs](https://docs.arize.com/arize/large-language-models/guardrails) |
 | License | Apache 2 |
 | Input/Output | Input or Output |
 
