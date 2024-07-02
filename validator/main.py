@@ -114,11 +114,7 @@ class DatasetEmbeddings(Validator):
             return FailResult(
                 metadata=metadata,
                 error_message=(
-                    f"""The following message triggered the Arize DatasetEmbeddings Guard:\n
-                        {user_message}.\n
-                    
-                    The message is similar to the following text chunk in our few shot dataset of jailbreaks prompts:\n
-                        {closest_chunk}"""
+                    f"The following message triggered the Arize DatasetEmbeddings Guard:\n\t{user_message}"
                 ),
             )
         # All chunks exceeded the cosine distance threshold
