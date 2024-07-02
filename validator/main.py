@@ -52,15 +52,13 @@ class ArizeDatasetEmbeddings(Validator):
     def __init__(
         self,
         threshold: float = 0.2,
-        validation_method: str = "full",
         on_fail: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(
-            on_fail, threshold=threshold, validation_method=validation_method, **kwargs
+            on_fail, threshold=threshold, **kwargs
         )
         self._threshold = float(threshold)
-        self._validation_method = "full"
         if kwargs.get("sources") is None:
             logging.warning("A source dataset was not provided, so using default sources of Jailbreak prompts from Arize.")
         self.sources = kwargs.get("sources", FEW_SHOT_TRAIN_PROMPTS)

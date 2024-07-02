@@ -96,7 +96,6 @@ Initializes a new instance of the ValidatorTemplate class.
 
 **Parameters**
 - **`threshold`** *(str)*: When the Guard is called on an input message, the Guard checks the cosine distance between the embedded incoming message and the embedded chunks from the source dataset. If any of the chunks are within the `threshold` (defaults to 0.2), then the Guard will take the `on_fail` action.
-- **`validation_method`** *(str)*: TODO(Julia) Remove this.
 - **`on_fail`** *(str, Callable)*: The policy to enact when a validator fails.  If `str`, must be one of `reask`, `fix`, `filter`, `refrain`, `noop`, `exception` or `fix_reask`. Otherwise, must be a function that is called when the validator fails.
 - **`sources`** *List[str]*: Specifies a source dataset with examples of either user input messages or LLM output messages that we would like to Guard against. We recommend including 10 examples.
 - **`embed_function`** *(Callable)*: The embedding function used to embed both the text chunks from `sources` and the input messages.
