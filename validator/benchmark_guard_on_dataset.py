@@ -1,4 +1,4 @@
-"""Benchmark Arize DatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts."""
+"""Benchmark Arize ArizeDatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts."""
 import os
 from getpass import getpass
 from typing import List
@@ -17,7 +17,7 @@ from guardrails import Guard
 from guardrails.llm_providers import PromptCallableException
 import openai
 
-from main import DatasetEmbeddings
+from main import ArizeDatasetEmbeddings
 
 
 JAILBREAK_PROMPTS_FP = "jailbreak_prompts_2023_05_07.csv"
@@ -27,7 +27,7 @@ VANILLA_PROMPTS_FP = "regular_prompts_2023_05_07.csv"
 NUM_FEW_SHOT_EXAMPLES = 10
 MODEL = "gpt-3.5-turbo"
 # Output file to log debugging info. Set to None if you do not wish to add logging.
-OUTFILE = f"arize_{DatasetEmbeddings.__name__}_guard_{MODEL}_output.txt"
+OUTFILE = f"arize_{ArizeDatasetEmbeddings.__name__}_guard_{MODEL}_output.txt"
 
 
 def append_to_file(filepath: str, text: str) -> None:
@@ -73,8 +73,8 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
             total = num_passed_guard + num_failed_guard
             if outfile is not None:
                 debug_text = f"""\nprompt:\n{prompt}\nresponse:\n{response}\n{100 * num_failed_guard / total:.2f}% of {total} 
-                    prompts failed the DatasetEmbeddings guard.\n{100 * num_passed_guard / total:.2f}% of {total} prompts 
-                    passed the DatasetEmbeddings guard."""
+                    prompts failed the ArizeDatasetEmbeddings guard.\n{100 * num_passed_guard / total:.2f}% of {total} prompts 
+                    passed the ArizeDatasetEmbeddings guard."""
                 append_to_file(filepath=outfile, text=debug_text)
         except PromptCallableException as e:
             # Dataset may contain a few bad apples that result in an Open AI error for invalid inputs.
@@ -84,7 +84,7 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
 
 
 def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jailbreak_test_prompts: List[str], vanilla_prompts: List[str], outfile: Optional[str]):
-    """Benchmark Arize DatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts.
+    """Benchmark Arize ArizeDatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts.
 
     :param train_prompts: Few-shot examples of jailbreak prompts.
     :param jailbreak_test_prompts: Test prompts used to evaluate the Guard. We expect the Guard to block these examples.
@@ -95,7 +95,7 @@ def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jai
     # Set up Guard
     guard = Guard.from_string(
         validators=[
-            DatasetEmbeddings(threshold=0.2, validation_method="full", on_fail="refrain", sources=train_prompts)
+            ArizeDatasetEmbeddings(threshold=0.2, validation_method="full", on_fail="refrain", sources=train_prompts)
         ],
     )
     

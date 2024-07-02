@@ -45,7 +45,7 @@ class EmbeddingChunkStrategy(Enum):
 
 
 @register_validator(name="arize/dataset_embeddings", data_type="string")
-class DatasetEmbeddings(Validator):
+class ArizeDatasetEmbeddings(Validator):
     """Validates that user-generated input does not match dataset of jailbreak
     embeddings from Arize AI."""
 
@@ -87,14 +87,14 @@ class DatasetEmbeddings(Validator):
         self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
-        """Validation function for the DatasetEmbeddings validator. If the cosine distance
+        """Validation function for the ArizeDatasetEmbeddings validator. If the cosine distance
         of the user input embeddings is below the user-specified threshold of the closest embedded chunk
         from the jailbreak examples in prompt sources, then the Guard will return FailResult. If all chunks
         are sufficiently distant, then the Guard will return PassResult.
 
-        :param value: This is the 'value' of user input. For the DatasetEmbeddings Guard, we want
+        :param value: This is the 'value' of user input. For the ArizeDatasetEmbeddings Guard, we want
             to ensure we are validating user input, rather than LLM output, so we need to call
-            the guard with Guard().use(DatasetEmbeddings, on="prompt")
+            the guard with Guard().use(ArizeDatasetEmbeddings, on="prompt")
 
         :return: PassResult or FailResult.
         """
@@ -114,7 +114,7 @@ class DatasetEmbeddings(Validator):
             return FailResult(
                 metadata=metadata,
                 error_message=(
-                    f"The following message triggered the Arize DatasetEmbeddings Guard:\n\t{user_message}"
+                    f"The following message triggered the Arize ArizeDatasetEmbeddings Guard:\n\t{user_message}"
                 ),
             )
         # All chunks exceeded the cosine distance threshold
