@@ -2,11 +2,11 @@
 # pytest tests/test_validator.py
 # this requires setting API key with export OPENAI_API_KEY = "my_key_from_open_ai"
 from guardrails import Guard
-from validator.main import DatasetEmbeddings
+from validator.main import ArizeDatasetEmbeddings
 
 guard = Guard.from_string(
     validators=[
-        DatasetEmbeddings(threshold=0.2, validation_method="full", on_fail="refrain")
+        ArizeDatasetEmbeddings(threshold=0.2, validation_method="full", on_fail="refrain")
     ],
 )
    
