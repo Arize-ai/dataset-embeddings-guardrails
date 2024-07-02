@@ -17,7 +17,7 @@ from guardrails import Guard
 from guardrails.llm_providers import PromptCallableException
 import openai
 
-from main import DatasetEmbeddings, get_prompts
+from main import DatasetEmbeddings
 
 
 JAILBREAK_PROMPTS_FP = "jailbreak_prompts_2023_05_07.csv"
