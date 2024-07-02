@@ -1,3 +1,3 @@
-from .main import DatasetEmbeddings
+from .main import ArizeDatasetEmbeddings
 
-__all__ = ["DatasetEmbeddings"]
+__all__ = ["ArizeDatasetEmbeddings"]
