@@ -1,13 +1,11 @@
 # Overview
 
-<ul>
 | Developed by | Arize AI |
 | Date of development | July 2, 2024 |
 | Validator type | Dataset, Embeddings |
 | Blog | TODO(Julia) Add link to docs |
 | License | Apache 2 |
 | Input/Output | Input or Output |
-</ul>
 
 ## Description
 
