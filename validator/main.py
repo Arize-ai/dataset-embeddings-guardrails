@@ -59,7 +59,7 @@ class ArizeDatasetEmbeddings(Validator):
     ):
         if kwargs.get("default_response") is not None:
             on_fail = "fix"
-        self.fix_value = kwargs.get(on_fail, ARIZE_DEFAULT_RESPONSE)
+        self.fix_value = kwargs.get("default_response", ARIZE_DEFAULT_RESPONSE)
         
         super().__init__(
             on_fail=on_fail, threshold=threshold, **kwargs
