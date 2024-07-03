@@ -44,6 +44,12 @@ class EmbeddingChunkStrategy(Enum):
     TOKEN = 3
 
 
+class GuardCorrectiveActions(Enum):
+    USE_DEFUALT_RESPONSE = "fix"
+    REASK_LLM = "reask"
+    THROW_EXCEPTION = "exception"
+
+
 @register_validator(name="arize/dataset_embeddings", data_type="string")
 class ArizeDatasetEmbeddings(Validator):
     """Validates that user-generated input does not match dataset of jailbreak
