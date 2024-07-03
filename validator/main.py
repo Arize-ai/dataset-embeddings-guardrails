@@ -59,8 +59,10 @@ class ArizeDatasetEmbeddings(Validator):
     ):
         if kwargs.get("default_response") is not None:
             on_fail = "fix"
+        self.fix_value = kwargs.get(on_fail, ARIZE_DEFAULT_RESPONSE)
+        
         super().__init__(
-            on_fail, threshold=threshold, **kwargs
+            on_fail=on_fail, threshold=threshold, **kwargs
         )
         self._threshold = float(threshold)
         if kwargs.get("sources") is None:
@@ -87,9 +89,6 @@ class ArizeDatasetEmbeddings(Validator):
 
         # Create embeddings
         self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
-
-        if on_fail == "fix":
-            self.fix_value = kwargs.get(on_fail, ARIZE_DEFAULT_RESPONSE)
         
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
