@@ -104,7 +104,7 @@ class ArizeDatasetEmbeddings(Validator):
         # Get cosine distance between the embedding of the user message and the closest embedded jailbreak prompts chunk.
         closest_chunk, lowest_distance = self.query_vector_collection(text=user_message, k=1)[0]
         metadata["lowest_cosine_distance"] = lowest_distance
-        metadata["similar_jailbreak_phrase"] = closest_chunk
+        metadata["most_similar_dataset_chunk"] = closest_chunk
         
         # Pass or fail Guard based on minimum cosine distance between user message and embedded jailbreak prompts.
         if lowest_distance < self._threshold:
@@ -112,7 +112,7 @@ class ArizeDatasetEmbeddings(Validator):
             return FailResult(
                 metadata=metadata,
                 error_message=(
-                    f"The following message triggered the Arize ArizeDatasetEmbeddings Guard:\n\t{user_message}"
+                    f"The following message triggered the ArizeDatasetEmbeddings Guard:\n\t{user_message}"
                 ),
             )
         # All chunks exceeded the cosine distance threshold
