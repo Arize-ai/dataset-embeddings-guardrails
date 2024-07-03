@@ -1,7 +1,7 @@
-"""Benchmark Arize ArizeDatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts."""
+"""Benchmark ArizeDatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts."""
 import os
 from getpass import getpass
-from typing import List
+from typing import List, Tuple
 import time
 import statistics
 
@@ -25,6 +25,7 @@ VANILLA_PROMPTS_FP = "regular_prompts_2023_05_07.csv"
 # Number of few-shot examples to show Guard what a jailbreak prompts looks like.
 # Too few examples will result in False Negatives, while too many examples will result in worse latency.
 NUM_FEW_SHOT_EXAMPLES = 10
+# Code only works for OpenAI models
 MODEL = "gpt-3.5-turbo"
 # Output file to log debugging info. Set to None if you do not wish to add logging.
 OUTFILE = f"arize_{ArizeDatasetEmbeddings.__name__}_guard_{MODEL}_output.txt"
@@ -40,14 +41,16 @@ def append_to_file(filepath: str, text: str) -> None:
         f.write(f"\nprompt:\n{text}")
 
 
-def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, outfile: Optional[str]):
+def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, outfile: Optional[str]) -> Tuple[float, float, List[float]]:
     """Evaluate Embeddings guard on benchmark dataset. Refer to README for details and links to arxiv paper. This
     will calculate the number of True Positives, False Positives, True Negatives and False Negatives.
 
     :param test_prompts: List of string prompts where we want to evaluate the Guard's response.
     :param guard: Guard we want to evaluate.
-    :param train_prompts: List of source prompts that serve as a few-shot guide to prompts we want to guard against.
     :param outfile: Output file for debugging information. If None, then we do not write logging information to a file.
+
+    :return: Tuple containing the number of examples that passed the guard, the number of examples that failed the guard,
+        and a list of latency measurements corresponding to the end-to-end openai.chat.completions call wrapped in the guard.
     """
     latency_measurements = []
     num_passed_guard = 0
@@ -58,7 +61,7 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
             response = guard(
                 llm_api=openai.chat.completions.create,
                 prompt=prompt,
-                model="gpt-3.5-turbo",
+                model=MODEL,
                 max_tokens=1024,
                 temperature=0.5,
                 metadata={
@@ -83,8 +86,9 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
     return num_passed_guard, num_failed_guard, latency_measurements
 
 
-def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jailbreak_test_prompts: List[str], vanilla_prompts: List[str], outfile: Optional[str]):
+def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jailbreak_test_prompts: List[str], vanilla_prompts: List[str], outfile: Optional[str]) -> None:
     """Benchmark Arize ArizeDatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts.
+    Write to file the number of examples that pass the Guard, the number that fail the guard and the latency.
 
     :param train_prompts: Few-shot examples of jailbreak prompts.
     :param jailbreak_test_prompts: Test prompts used to evaluate the Guard. We expect the Guard to block these examples.
@@ -119,6 +123,7 @@ def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jai
 
 
 def get_prompts(filename: str) -> List[str]:
+    """Extract prompt from CSV file."""
     script_dir = os.path.dirname(__file__)  # Get the directory where the script is located
     # Dataset from public repo associated with arxiv paper https://github.com/verazuo/jailbreak_llms
     file_path = os.path.join(script_dir, filename)
@@ -127,6 +132,7 @@ def get_prompts(filename: str) -> List[str]:
 
 
 def main():
+    """Benchmark ArizeDatasetEmbeddings Guard on jailbreak prompts using public dataset."""
     # Jailbreak prompts that we expect to Fail the Guard (656 examples)
     jailbreak_prompts = get_prompts(JAILBREAK_PROMPTS_FP)
     train_prompts = jailbreak_prompts[-NUM_FEW_SHOT_EXAMPLES:]
