@@ -2,8 +2,6 @@ import itertools
 import numpy as np
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from enum import Enum
-import pandas as pd
-import os
 import logging
 
 import numpy as np
@@ -15,6 +13,7 @@ from guardrails.validator_base import (
     ValidationResult,
     Validator,
     register_validator,
+    OnFailAction
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
 
@@ -44,10 +43,7 @@ class EmbeddingChunkStrategy(Enum):
     TOKEN = 3
 
 
-class GuardCorrectiveActions(Enum):
-    USE_DEFUALT_RESPONSE = "fix"
-    REASK_LLM = "reask"
-    THROW_EXCEPTION = "exception"
+ARIZE_DEFAULT_RESPONSE = "I'm sorry, I cannot respond to that. Please try rephrasing or let me know if I can help you with something else."
 
 
 @register_validator(name="arize/dataset_embeddings", data_type="string")
@@ -58,9 +54,11 @@ class ArizeDatasetEmbeddings(Validator):
     def __init__(
         self,
         threshold: float = 0.2,
-        on_fail: Optional[Callable] = None,
+        on_fail: Optional[Union[Callable, OnFailAction]] = None,
         **kwargs,
     ):
+        if kwargs.get("default_response") is not None:
+            on_fail = "fix"
         super().__init__(
             on_fail, threshold=threshold, **kwargs
         )
@@ -89,6 +87,10 @@ class ArizeDatasetEmbeddings(Validator):
 
         # Create embeddings
         self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
+
+        if on_fail == "fix":
+            self.fix_value = kwargs.get(on_fail, ARIZE_DEFAULT_RESPONSE)
+        
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validation function for the ArizeDatasetEmbeddings validator. If the cosine distance
@@ -120,6 +122,7 @@ class ArizeDatasetEmbeddings(Validator):
                 error_message=(
                     f"The following message triggered the ArizeDatasetEmbeddings Guard:\n\t{user_message}"
                 ),
+                fix_value=self.fix_value
             )
         # All chunks exceeded the cosine distance threshold
         return PassResult(metadata=metadata)
