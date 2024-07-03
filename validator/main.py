@@ -112,7 +112,7 @@ class ArizeDatasetEmbeddings(Validator):
             return FailResult(
                 metadata=metadata,
                 error_message=(
-                    f"The following message triggered the Arize ArizeDatasetEmbeddings Guard:\n\t{user_message}"
+                    f"The following message triggered the ArizeDatasetEmbeddings Guard:\n\t{user_message}"
                 ),
             )
         # All chunks exceeded the cosine distance threshold
