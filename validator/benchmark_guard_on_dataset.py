@@ -86,7 +86,7 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
     return num_passed_guard, num_failed_guard, latency_measurements
 
 
-def benchmark_arize_jailbreak_embeddings_validator(train_prompts: List[str], jailbreak_test_prompts: List[str], vanilla_prompts: List[str], outfile: Optional[str]) -> None:
+def benchmark_dataset_embeddings_guard(train_prompts: List[str], jailbreak_test_prompts: List[str], vanilla_prompts: List[str], outfile: Optional[str]) -> None:
     """Benchmark Arize ArizeDatasetEmbeddings Guard against a dataset of regular prompts and a dataset of jailbreak prompts.
     Write to file the number of examples that pass the Guard, the number that fail the guard and the latency.
 
@@ -141,7 +141,7 @@ def main():
     # Vanilla prompts that we expect to Pass the Guard
     vanilla_prompts = get_prompts(VANILLA_PROMPTS_FP)
 
-    benchmark_arize_jailbreak_embeddings_validator(
+    benchmark_dataset_embeddings_guard(
         jailbreak_test_prompts=test_prompts,
         vanilla_prompts=vanilla_prompts,
         train_prompts=train_prompts,
