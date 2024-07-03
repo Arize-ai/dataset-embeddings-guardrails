@@ -89,7 +89,6 @@ class ArizeDatasetEmbeddings(Validator):
 
         # Create embeddings
         self.source_embeddings = np.array(self.embed_function(self.chunks)).squeeze()
-        
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
         """Validation function for the ArizeDatasetEmbeddings validator. If the cosine distance
