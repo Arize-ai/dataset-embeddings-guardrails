@@ -1,7 +1,7 @@
 [project]
-name = "jailbreak-embeddings"
+name = "dataset-embeddings"
 version = "0.0.0"
-description = "A Guardrails AI validator that stops jailbreaks based on embeddings similarity to a small dataset of known jailbreaks"
+description = "A Guardrails AI validator that guards against input based on embeddings similarity to a small dataset of known inputs"
 authors = [
     {name = "Julia Gomes", email = "julia@arize.com"}
 ]
