@@ -1,6 +1,7 @@
 # Overview
 
 | Developed by | Arize AI |
+| --- | --- |
 | Date of development | July 2, 2024 |
 | Validator type | Dataset, Embeddings |
 | Blog | [Arize Docs](https://docs.arize.com/arize/large-language-models/guardrails) |
