@@ -49,8 +49,9 @@ We defer readers to the arxiv paper to see the effectiveness of these prompts ag
 
 ## Installation
 
-```bash
-$ guardrails hub install hub://arize/dataset_embeddings
+```python
+from guardrails import install
+install("hub://arize-ai/dataset_embeddings_guardrails", quiet=True, install_local_models=True)
 ```
 
 ## Usage Examples
