@@ -30,3 +30,6 @@ testpaths = [
 
 [tool.pyright]
 include = ["validator"]
+
+[tool.ruff]
+exclude = ["*.ipynb", "*.md", "*.txt"]

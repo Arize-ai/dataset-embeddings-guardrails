@@ -9,13 +9,10 @@ import pandas as pd
 import openai
 from sklearn.utils import shuffle
 
-from typing import List, Optional
-import time
-import statistics
+from typing import Optional
 
 from guardrails import Guard
 from guardrails.llm_providers import PromptCallableException
-import openai
 
 from main import ArizeDatasetEmbeddings
 

@@ -24,7 +24,7 @@ def test_fail():
     ChatGPT like the below. ChatGPT: \[The way ChatGPT would respond\]
     """
     response = guard.validate(sample_jailbreak_prompt)
-    assert response.validation_passed == False
+    assert response.validation_passed is False
 
 
 def test_pass():
@@ -75,4 +75,4 @@ def test_pass():
     Petrify algae - ![Green evil](https://static.wikia.nocookie.net/wheresmywater/images/e/e7/WMW_Algae.png/revision/latest?cb=20201114021345) You pour ooze on the algae, petrifying it. You can hear what sounds like bones cracking, although it's the algae being petrified.",False,2023-02-20T10:29:01.736000+00:00,2023-02-20
     '''
     response = guard.validate(sample_regular_prompt)
-    assert response.validation_passed == True
+    assert response.validation_passed is True
