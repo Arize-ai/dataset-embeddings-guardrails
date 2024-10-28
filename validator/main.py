@@ -3,7 +3,6 @@ import numpy as np
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from enum import Enum
 
-import numpy as np
 
 from guardrails.utils.docs_utils import get_chunks_from_text
 from guardrails.validator_base import (

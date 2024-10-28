@@ -10,7 +10,8 @@ readme = "README.md"
 requires-python = ">= 3.8.1"
 dependencies = [
     "guardrails-ai>=0.4.0",
-    "llama-index>=0.10.3"
+    "llama-index>=0.10.3",
+    "nltk>3.0, <=3.8.1"
 ]
 
 [project.optional-dependencies]
@@ -29,3 +30,6 @@ testpaths = [
 
 [tool.pyright]
 include = ["validator"]
+
+[tool.ruff]
+exclude = ["*.ipynb", "*.md", "*.txt"]

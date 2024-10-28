@@ -5,17 +5,14 @@ from typing import List, Tuple
 import time
 import statistics
 
-import pandas as pd
+import pandas as pd # type: ignore
 import openai
-from sklearn.utils import shuffle
+from sklearn.utils import shuffle # type: ignore
 
-from typing import List, Optional
-import time
-import statistics
+from typing import Optional
 
 from guardrails import Guard
 from guardrails.llm_providers import PromptCallableException
-import openai
 
 from main import ArizeDatasetEmbeddings
 
@@ -69,7 +66,7 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
                 }
             )
             latency_measurements.append(time.perf_counter() - start_time)
-            if response.validation_passed:
+            if response.validation_passed: # type: ignore
                 num_passed_guard += 1
             else:
                 num_failed_guard += 1
@@ -82,7 +79,7 @@ def evaluate_embeddings_guard_on_dataset(test_prompts: List[str], guard: Guard, 
         except PromptCallableException as e:
             # Dataset may contain a few bad apples that result in an Open AI error for invalid inputs.
             # Catch and log the exception, then continue benchmarking the valid examples.
-            append_to_file(filepath=outfile, text=f"\nexception:\n{e}")
+            append_to_file(filepath=outfile, text=f"\nexception:\n{e}") # type: ignore
     return num_passed_guard, num_failed_guard, latency_measurements
 
 
@@ -99,7 +96,7 @@ def benchmark_dataset_embeddings_guard(train_prompts: List[str], jailbreak_test_
     # Set up Guard
     guard = Guard.from_string(
         validators=[
-            ArizeDatasetEmbeddings(threshold=0.2, on_fail="refrain", sources=train_prompts)
+            ArizeDatasetEmbeddings(threshold=0.2, on_fail="refrain", sources=train_prompts) # type: ignore
         ],
     )
     
