@@ -5,7 +5,7 @@ description = "A Guardrails AI validator that guards against input based on embe
 authors = [
     {name = "Julia Gomes", email = "julia@arize.com"}
 ]
-license = {file = "LICENSE"}
+license = {file = "LICENSE.txt"}
 readme = "README.md"
 requires-python = ">= 3.8.1"
 dependencies = [
